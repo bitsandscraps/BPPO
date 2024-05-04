@@ -128,7 +128,6 @@ if __name__ == "__main__":
             value_loss = value.update(replay_buffer)
             
             if step % int(args.log_freq) == 0:
-                print(f"Step: {step}, Loss: {value_loss:.4f}")
                 logger.add_scalar('value_loss', value_loss, global_step=(step+1))
 
         value.save(value_path)
@@ -142,7 +141,6 @@ if __name__ == "__main__":
             Q_bc_loss = Q_bc.update(replay_buffer, pi=None)
 
             if step % int(args.log_freq) == 0:
-                print(f"Step: {step}, Loss: {Q_bc_loss:.4f}")
                 logger.add_scalar('Q_bc_loss', Q_bc_loss, global_step=(step+1))
 
         Q_bc.save(Q_bc_path)
