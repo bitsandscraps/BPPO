@@ -1,5 +1,5 @@
 import gym
-import d4rl
+import d4rl.gym_mujoco
 import torch
 import numpy as np
 import os
