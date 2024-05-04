@@ -61,6 +61,7 @@ if __name__ == "__main__":
     parser.add_argument("--is_clip_decay", default=True, type=bool)  
     parser.add_argument("--is_bppo_lr_decay", default=True, type=bool)       
     parser.add_argument("--is_update_old_policy", default=True, type=bool)
+    parser.add_argument("--old_policy_update_freq", type=int, default=10)
     parser.add_argument("--is_state_norm", default=False, type=bool)
     
     args = parser.parse_args()
@@ -159,14 +160,7 @@ if __name__ == "__main__":
             bc_loss = bc.update(replay_buffer)
 
             if step % int(args.log_freq) == 0:
-                current_bc_score = bc.offline_evaluate(args.env, args.seed, mean, std)
-                if current_bc_score > best_bc_score:
-                    best_bc_score = current_bc_score
-                    bc.save(best_bc_path)
-                    np.savetxt(os.path.join(path, 'best_bc.csv'), [best_bc_score], fmt='%f', delimiter=',')
-                print(f"Step: {step}, Loss: {bc_loss:.4f}, Score: {current_bc_score:.4f}")
                 logger.add_scalar('bc_loss', bc_loss, global_step=(step+1))
-                logger.add_scalar('bc_score', current_bc_score, global_step=(step+1))
 
         bc.save(os.path.join(path, 'bc_last.pt'))
         bc.load(best_bc_path)
@@ -177,24 +171,14 @@ if __name__ == "__main__":
     best_bppo_path = os.path.join(path, current_time, 'bppo_best.pt')
     Q = Q_bc
 
-    best_bppo_score = bppo.offline_evaluate(args.env, args.seed, mean, std)
-    print('best_bppo_score:',best_bppo_score,'-------------------------')
-
     for step in tqdm(range(int(args.bppo_steps)), desc='bppo updating ......'):
         if step > 200:
             args.is_clip_decay = False
             args.is_bppo_lr_decay = False
         bppo_loss = bppo.update(replay_buffer, Q, value, args.is_clip_decay, args.is_bppo_lr_decay)
-        current_bppo_score = bppo.offline_evaluate(args.env, args.seed, mean, std)
 
-        if current_bppo_score > best_bppo_score:
-            best_bppo_score = current_bppo_score
-            print('best_bppo_score:',best_bppo_score,'-------------------------')
-            bppo.save(best_bppo_path)
-            np.savetxt(os.path.join(path, current_time, 'best_bppo.csv'), [best_bppo_score], fmt='%f', delimiter=',')
-
-            if args.is_update_old_policy:
-                bppo.set_old_policy()
+        if args.is_update_old_policy and (step + 1) % args.old_policy_update_freq == 0:
+            bppo.set_old_policy()
 
         if args.is_offpolicy_update:
             for _ in tqdm(range(int(args.q_pi_steps)), desc='Q_pi updating ......'): 
@@ -202,8 +186,6 @@ if __name__ == "__main__":
 
             Q = Q_pi
 
-        print(f"Step: {step}, Loss: {bppo_loss:.4f}, Score: {current_bppo_score:.4f}")
         logger.add_scalar('bppo_loss', bppo_loss, global_step=(step+1))
-        logger.add_scalar('bppo_score', current_bppo_score, global_step=(step+1))
     
     logger.close()
