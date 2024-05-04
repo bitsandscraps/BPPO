@@ -151,21 +151,22 @@ class ProximalPolicyOptimization:
         mean: np.ndarray,
         std: np.ndarray,
         eval_episodes: int=10
-        ) -> float:
+        ) -> list[float]:
         env = gym.make(env_name)
-        env.seed(seed)
 
-        total_reward = 0
-        for _ in range(eval_episodes):
+        rewards: list[float] = []
+        for eps in range(eval_episodes):
+            total_reward = 0
+            env.seed(seed + eps)
             s, done = env.reset(), False
             while not done:
                 s = torch.FloatTensor((np.array(s).reshape(1, -1) - mean) / std).to(self._device)
                 a = self.select_action(s, is_sample=False).cpu().data.numpy().flatten()
                 s, r, done, _ = env.step(a)
                 total_reward += r
+            rewards.append(total_reward)
         
-        avg_reward = total_reward / eval_episodes
-        return avg_reward
+        return rewards
 
 
     def save(

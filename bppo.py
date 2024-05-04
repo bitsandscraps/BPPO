@@ -183,12 +183,11 @@ class BehaviorProximalPolicyOptimization(ProximalPolicyOptimization):
     def offline_evaluate(
         self,
         env_name: str,
-        seed: int,
         mean: np.ndarray,
         std: np.ndarray,
         eval_episodes: int=10
-        ) -> float:
+        ) -> list[float]:
         env = gym.make(env_name)
-        avg_reward = self.evaluate(env_name, seed, mean, std, eval_episodes)
-        d4rl_score = env.get_normalized_score(avg_reward) * 100
-        return d4rl_score
+        rewards = self.evaluate(env_name, 0, mean, std, eval_episodes)
+        d4rl_scores = [env.get_normalized_score(rew) for rew in rewards]
+        return d4rl_scores

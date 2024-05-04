@@ -171,6 +171,7 @@ if __name__ == "__main__":
     best_bppo_path = os.path.join(path, current_time, 'bppo_best.pt')
     Q = Q_bc
 
+    bppo_scores = {}
     for step in tqdm(range(int(args.bppo_steps)), desc='bppo updating ......'):
         if step > 200:
             args.is_clip_decay = False
@@ -187,5 +188,13 @@ if __name__ == "__main__":
             Q = Q_pi
 
         logger.add_scalar('bppo_loss', bppo_loss, global_step=(step+1))
+
+        if (step + 1) % args.old_policy_update_freq == 0:
+            bppo_score = bppo.offline_evaluate(args.env, mean, std)
+            logger.add_scalar('bppo_score', bppo_score, global_step=(step+1))
+            bppo_scores[step + 1] = np.asarray(bppo_score)
+
+    np.savez(os.path.join(path, 'results.npz'), **bppo_scores)
+
     
     logger.close()
