@@ -151,24 +151,18 @@ if __name__ == "__main__":
         Q_pi.load(Q_bc_path)
 
     # bc training
-    best_bc_path = os.path.join(path, 'bc_best.pt')
-    if os.path.exists(best_bc_path):
-        bc.load(best_bc_path)
-    else:
-        best_bc_score = 0    
-        for step in tqdm(range(int(args.bc_steps)), desc='bc updating ......'):
-            bc_loss = bc.update(replay_buffer)
+    bc_path = os.path.join(path, 'bc_last.pt')
+    for step in tqdm(range(int(args.bc_steps)), desc='bc updating ......'):
+        bc_loss = bc.update(replay_buffer)
 
-            if step % int(args.log_freq) == 0:
-                logger.add_scalar('bc_loss', bc_loss, global_step=(step+1))
+        if step % int(args.log_freq) == 0:
+            logger.add_scalar('bc_loss', bc_loss, global_step=(step+1))
 
-        bc.save(os.path.join(path, 'bc_last.pt'))
-        bc.load(best_bc_path)
+    bc.save(bc_path)
 
 
     # bppo training    
-    bppo.load(best_bc_path)
-    best_bppo_path = os.path.join(path, current_time, 'bppo_best.pt')
+    bppo.load(bc_path)
     Q = Q_bc
 
     bppo_scores = {}
