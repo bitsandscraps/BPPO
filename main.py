@@ -185,7 +185,7 @@ if __name__ == "__main__":
             if (step + 1) % args.old_policy_update_freq == 0:
                 bppo_score = bppo.offline_evaluate(args.env, mean, std)
                 logger.add_scalar('bppo_score', np.mean(bppo_score), global_step=(step+1))
-                bppo_scores[step + 1] = np.asarray(bppo_score)
+                bppo_scores[f'{step + 1}'] = np.asarray(bppo_score)
 
     np.savez(os.path.join(path, 'results.npz'), **bppo_scores)
 
