@@ -150,13 +150,16 @@ if __name__ == "__main__":
 
     # bc training
     bc_path = os.path.join(path, 'bc_last.pt')
-    for step in tqdm(range(int(args.bc_steps)), desc='bc updating ......'):
-        bc_loss = bc.update(replay_buffer)
+    if os.path.exists(bc_path):
+        bc.load(bc_path)
+    else:
+        for step in tqdm(range(int(args.bc_steps)), desc='bc updating ......'):
+            bc_loss = bc.update(replay_buffer)
 
-        if step % int(args.log_freq) == 0:
-            logger.add_scalar('bc_loss', bc_loss, global_step=(step+1))
+            if step % int(args.log_freq) == 0:
+                logger.add_scalar('bc_loss', bc_loss, global_step=(step+1))
 
-    bc.save(bc_path)
+        bc.save(bc_path)
 
 
     # bppo training    
